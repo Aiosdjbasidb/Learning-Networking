@@ -20,7 +20,7 @@ namespace XnaMultiplayerGame.Network
 	/// </summary>
 	public static class Listener
 	{
-		public static List<TcpClient> PendingConnections;
+		public static List<TcpClient> PendingConnections { get; private set; }
 		private static TcpListener _listener;
 
 		public static bool Listening { get; set; }
@@ -41,8 +41,8 @@ namespace XnaMultiplayerGame.Network
 		public static void StopListening()
 		{
 			Console.WriteLine("Stopping listener...");
-			Listening = false;
 			_listenThread.Abort();
+			Listening = false;
 			Console.WriteLine("Stopped listener.");
 		}
 
@@ -51,17 +51,17 @@ namespace XnaMultiplayerGame.Network
 			Listening = true;
 
 			_listenThread = new Thread(delegate()
-			                          	{
-			                          		Console.WriteLine("Starting listen thread...");
-			                          		while (Listening)
-			                          		{
-			                          			TcpClient client = _listener.AcceptTcpClient();
+			                           	{
+			                           		Console.WriteLine("Starting listen thread...");
+			                           		while (Listening)
+			                           		{
+			                           			TcpClient client = _listener.AcceptTcpClient();
 
-			                          			Console.WriteLine(client.Client.RemoteEndPoint + " connected.");
+			                           			Console.WriteLine(client.Client.RemoteEndPoint + " is connecting...");
 
-			                          			PendingConnections.Add(client);
-			                          		}
-			                          	});
+			                           			PendingConnections.Add(client);
+			                           		}
+			                           	});
 
 			_listenThread.Start();
 		}

@@ -29,6 +29,8 @@ namespace XnaMultiplayerGame.Network
 		public static Player Player { get; set; }
 		public static int Id;
 
+		private static List<Platform> _platforms;
+
 		public enum DataType
 		{
 			/// <summary>
@@ -75,7 +77,8 @@ namespace XnaMultiplayerGame.Network
 			if (TcpClient.Available > 0)
 			{
 				// Update network
-				string[] messages = NetHelper.ReceiveMessageFrom(TcpClient);
+				string fullMessage = NetHelper.ReceiveStringMessageFrom(TcpClient);
+				string[] messages = fullMessage.Split(NetHelper.SplitChar);
 				int type;
 				if (int.TryParse(messages[0], out type))
 				{
@@ -99,10 +102,18 @@ namespace XnaMultiplayerGame.Network
 							case (int)DataType.Platforms:
 								{
 									// Receive order is: x:y:w:h;
-									int x = int.Parse(messages[1]);
-									int y = int.Parse(messages[2]);
-									int width = int.Parse(messages[3]);
-									int height = int.Parse(messages[4]);
+									_platforms.Clear();
+
+									string[] platformInfo = fullMessage.Split(';');
+									foreach (string platform in platformInfo)
+									{
+										int x = int.Parse(platformInfo[0]);
+										int y = int.Parse(platformInfo[1]);
+										int width = int.Parse(platformInfo[2]);
+										int height = int.Parse(platformInfo[3]);
+
+										_platforms.Add(new Platform(new Rectangle(x, y, width, height)));
+									}
 
 									break;
 								}
@@ -159,10 +170,19 @@ namespace XnaMultiplayerGame.Network
 
 		public static void Draw(SpriteBatch sb)
 		{
+			ServerGetPlatforms();
+
+
+
 			if (Player != null)
 			{
 				Player.Draw(sb);
 			}
+		}
+
+		private static void ServerGetPlatforms()
+		{
+			NetHelper.SendMessageTo(TcpClient, NetHelper.BuildMessage((int) DataType.Platforms));
 		}
 	}
 }

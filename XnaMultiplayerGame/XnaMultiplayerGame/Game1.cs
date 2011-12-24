@@ -137,10 +137,10 @@ namespace XnaMultiplayerGame
 			sb.Begin();
 			BackgroundWall.Draw(sb);
 
-			if (Program.Hosting)
+			/*if (Program.Hosting)
 			{
 				World.Draw(sb);
-			}
+			}*/
 
 			LocalClient.Draw(sb);
 			DrawVignette();

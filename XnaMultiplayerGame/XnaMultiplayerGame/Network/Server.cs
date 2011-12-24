@@ -26,8 +26,7 @@ namespace XnaMultiplayerGame.Network
 		public enum DataType
 		{
 			Join,
-			Disconnect,
-			Kick
+			Disconnect
 		}
 
 		public static void Initialize()

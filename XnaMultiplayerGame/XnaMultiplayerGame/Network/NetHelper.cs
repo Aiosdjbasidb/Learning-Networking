@@ -50,5 +50,12 @@ namespace XnaMultiplayerGame.Network
 
 			return buffer;
 		}
+
+		public static string ReceiveStringMessageFrom(TcpClient TcpClient)
+		{
+			string[] messages = ReceiveMessageFrom(TcpClient);
+
+			return messages.Aggregate(string.Empty, (current, msg) => current + msg);
+		}
 	}
 }
