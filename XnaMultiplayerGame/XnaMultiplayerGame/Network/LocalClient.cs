@@ -34,29 +34,20 @@ namespace XnaMultiplayerGame.Network
 		public enum DataType
 		{
 			/// <summary>
-			/// Format: x:y
-			/// </summary>
-			Position,
-
-			/// <summary>
-			/// Format: x:y
-			/// </summary>
-			Velocity,
-
-			/// <summary>
-			/// Format: x:y:w:h;
-			/// </summary>
-			Platforms,
-
-			/// <summary>
 			/// Format: id:x:y:w:h
 			/// </summary>
-			NewPlayerInfo
+			NewPlayerInfo,
+
+			/// <summary>
+			/// Format: plrX:plrY:plrW:plrH:velX:velY
+			/// </summary>
+			UpdateInfo
 		}
 
 		public static void Initialize()
 		{
 			TcpClient = new TcpClient();
+			_platforms = new List<Platform>();
 
 			if (Program.Hosting)
 			{
@@ -67,14 +58,14 @@ namespace XnaMultiplayerGame.Network
 		public static void ConnectLocalHost()
 		{
 			TcpClient.Connect("127.0.0.1", 5555);
-			NetHelper.SendMessageTo(TcpClient, NetHelper.BuildMessage((int) Server.DataType.Join));
+			NetHelper.SendMessageTo(TcpClient, NetHelper.BuildMessage((int) Server.RequestType.Join));
 		}
 
 		public static void Update()
 		{
 			float elapsed = TimeManager.Elapsed;
 
-			if (TcpClient.Available > 0)
+			while (TcpClient.Available > 0)
 			{
 				// Update network
 				string fullMessage = NetHelper.ReceiveStringMessageFrom(TcpClient);
@@ -99,41 +90,39 @@ namespace XnaMultiplayerGame.Network
 
 									break;
 								}
-							case (int)DataType.Platforms:
+							case (int)DataType.UpdateInfo:
 								{
-									// Receive order is: x:y:w:h;
-									_platforms.Clear();
+									// Receive for player order is: plrX:plrY:plrW:plrH:velX:velY;
+									// Receive for platform order is: x:y;
+									string plrInfoString = fullMessage.Split(';')[1];
+									string mapInfoString = fullMessage.Split(';')[2];
+									string[] plrInfo = plrInfoString.Split(':');
+									string[] mapInfo = mapInfoString.Split(':');
 
-									string[] platformInfo = fullMessage.Split(';');
-									foreach (string platform in platformInfo)
+									float plrX = float.Parse(plrInfo[0]);
+									float plrY = float.Parse(plrInfo[1]);
+									float plrWidth = float.Parse(plrInfo[2]);
+									float plrHeight = float.Parse(plrInfo[3]);
+									float velX = float.Parse(plrInfo[4]);
+									float velY = float.Parse(plrInfo[5]);
+
+									Player.Position = new Vector2(plrX, plrY);
+									Player.BoundingBox = new Rectangle(Player.BoundingBox.X, Player.BoundingBox.Y, (int) plrWidth, (int) plrHeight);
+									Player.Velocity = new Vector2(velX, velY);
+
+									if (!Program.Hosting)
 									{
-										int x = int.Parse(platformInfo[0]);
-										int y = int.Parse(platformInfo[1]);
-										int width = int.Parse(platformInfo[2]);
-										int height = int.Parse(platformInfo[3]);
+										for (int i = 0; i < mapInfo.Length; i++)
+										{
+											if (mapInfo.Length < 2) break;
+											if (mapInfo[i] == string.Empty) continue;
 
-										_platforms.Add(new Platform(new Rectangle(x, y, width, height)));
+											float x = float.Parse(mapInfo[i]);
+											float y = float.Parse(mapInfo[++i]);
+
+											PlatformWorld.SpawnPlatform(new Vector2(x, y));
+										}
 									}
-
-									break;
-								}
-							case (int)DataType.Position:
-								{
-									// Receive order is: x;y
-									int x = int.Parse(messages[1]);
-									int y = int.Parse(messages[2]);
-
-									Player.Position = new Vector2(x, y);
-
-									break;
-								}
-							case (int)DataType.Velocity:
-								{
-									// Receive order is: x;y
-									int x = int.Parse(messages[1]);
-									int y = int.Parse(messages[2]);
-
-									Player.Velocity = new Vector2(x, y);
 
 									break;
 								}
@@ -142,7 +131,11 @@ namespace XnaMultiplayerGame.Network
 					catch (Exception e)
 					{
 						Console.WriteLine(e.Message);
-						Program.Game.Exit();
+
+						if(!Program.Debugging)
+							Program.Game.Exit();
+						else
+							throw;
 					}
 				}
 			}
@@ -164,15 +157,13 @@ namespace XnaMultiplayerGame.Network
 					Player.Velocity = new Vector2(Player.Velocity.X, -600);
 				}
 
-				Player.Update(Program.Game.World.Platforms.ToArray());
+				Player.UpdatePhysics(PlatformWorld.Platforms.ToArray());
 			}
 		}
 
 		public static void Draw(SpriteBatch sb)
 		{
-			ServerGetPlatforms();
-
-
+			DrawWorld(sb);
 
 			if (Player != null)
 			{
@@ -180,9 +171,12 @@ namespace XnaMultiplayerGame.Network
 			}
 		}
 
-		private static void ServerGetPlatforms()
+		private static void DrawWorld(SpriteBatch sb)
 		{
-			NetHelper.SendMessageTo(TcpClient, NetHelper.BuildMessage((int) DataType.Platforms));
+			foreach (Platform p in _platforms)
+			{
+				p.Draw(sb);
+			}
 		}
 	}
 }

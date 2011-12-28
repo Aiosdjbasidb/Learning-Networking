@@ -6,6 +6,7 @@ namespace XnaMultiplayerGame
 #if WINDOWS || XBOX
 	static class Program
 	{
+		public static bool Debugging = true;
 		public static bool Hosting = true;
 
 		public static Game1 Game { get; set; }

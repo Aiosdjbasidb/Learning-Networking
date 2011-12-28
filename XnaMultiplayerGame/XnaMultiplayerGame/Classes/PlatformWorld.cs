@@ -19,29 +19,37 @@ namespace XnaMultiplayerGame.Classes
 	/// <summary>
 	/// TODO: Update summary.
 	/// </summary>
-	public class PlatformWorld
+	public static class PlatformWorld
 	{
-		public List<Platform> Platforms { get; private set; }
-		public float MoveSpeed { get; set; }
+		public static List<Platform> Platforms { get; private set; }
+		public static float MoveSpeed { get; set; }
 
-		private float _elapsed;
-		private float _maxElapsed = 1f; // In seconds
+		private static float _elapsed;
+		private static float _maxElapsed = 1f; // Delay in seconds before spawning another platform.
 
-		public PlatformWorld(float moveSpeed)
+		public static void Initialize(float moveSpeed)
 		{
 			Platforms = new List<Platform>();
 			MoveSpeed = -Math.Abs(moveSpeed);
 		}
 
-		public void SpawnPlatform()
+		public static void SpawnPlatform()
 		{
 			Vector2 pos = GetSpawnPosition();
-			Platforms.Add(new Platform(new Rectangle((int) pos.X, (int) pos.Y, Platform.Texture.Width, Platform.Texture.Height)));
+			SpawnPlatform(pos);
 		}
 
-		public void Update()
+		public static void SpawnPlatform(Vector2 position)
+		{
+			Console.WriteLine("Spawning platform");
+			Platforms.Add(new Platform(new Rectangle((int)position.X, (int)position.Y, Platform.Texture.Width, Platform.Texture.Height)));
+		}
+
+		public static void Update()
 		{
 			float elapsed = TimeManager.Elapsed;
+
+			if (Platforms == null) return;
 
 			_elapsed += elapsed;
 			if (_elapsed >= _maxElapsed)
@@ -64,7 +72,7 @@ namespace XnaMultiplayerGame.Classes
 			}
 		}
 
-		public void Draw(SpriteBatch sb)
+		public static void Draw(SpriteBatch sb)
 		{
 			foreach (Platform p in Platforms)
 			{
@@ -72,7 +80,7 @@ namespace XnaMultiplayerGame.Classes
 			}
 		}
 
-		private Vector2 GetSpawnPosition()
+		private static Vector2 GetSpawnPosition()
 		{
 			return new Vector2(Helper.Rand.Next(10, (int)Helper.GetWindowSize().X - (Platform.Texture.Width + 10)), Helper.GetWindowSize().Y);
 		}

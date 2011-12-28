@@ -28,7 +28,7 @@ namespace XnaMultiplayerGame.Network
 
 			string message = Encoding.Unicode.GetString(bMessage);
 
-			Console.WriteLine("Received message from " + target.Client.RemoteEndPoint + ": \"" + message + "\".");
+			//Console.WriteLine("Received message from " + target.Client.RemoteEndPoint + ": \"" + message + "\".");
 
 			return message.Split(SplitChar);
 		}
@@ -37,13 +37,13 @@ namespace XnaMultiplayerGame.Network
 		{
 			byte[] bMessage = Encoding.Unicode.GetBytes(message);
 			target.GetStream().Write(bMessage, 0, bMessage.Count());
-			Console.WriteLine("Sent message to " + target.Client.RemoteEndPoint + ": \"" + message + "\".");
+			//Console.WriteLine("Sent message to " + target.Client.RemoteEndPoint + ": \"" + message + "\".");
 		}
 
 		public static string BuildMessage(params float[] contents)
 		{
 			string buffer = string.Empty;
-			foreach (int msg in contents)
+			foreach (float msg in contents)
 			{
 				buffer += msg.ToString() + SplitChar;
 			}
@@ -51,11 +51,11 @@ namespace XnaMultiplayerGame.Network
 			return buffer;
 		}
 
-		public static string ReceiveStringMessageFrom(TcpClient TcpClient)
+		public static string ReceiveStringMessageFrom(TcpClient tcpClient)
 		{
-			string[] messages = ReceiveMessageFrom(TcpClient);
+			string[] messages = ReceiveMessageFrom(tcpClient);
 
-			return messages.Aggregate(string.Empty, (current, msg) => current + msg);
+			return messages.Aggregate(string.Empty, (current, message) => current + message + SplitChar);
 		}
 	}
 }

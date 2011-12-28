@@ -30,7 +30,6 @@ namespace XnaMultiplayerGame
 		private readonly Color _clearColor = new Color(50, 82, 95, 255);
 
 		public BackgroundWall BackgroundWall;
-		public PlatformWorld World;
 
 		private const float DefaultScrollSpeed = 150f;
 
@@ -78,7 +77,7 @@ namespace XnaMultiplayerGame
 
 			if (Program.Hosting)
 			{
-				World = new PlatformWorld(DefaultScrollSpeed);
+				PlatformWorld.Initialize(DefaultScrollSpeed);
 				Server.Initialize();
 				Listener.Initialize();
 			}
@@ -115,11 +114,11 @@ namespace XnaMultiplayerGame
 
 			if (Program.Hosting)
 			{
-				World.Update();
 				Server.Update();
 			}
 
 			LocalClient.Update();
+			PlatformWorld.Update();
 
 			base.Update(gameTime);
 		}
@@ -137,10 +136,10 @@ namespace XnaMultiplayerGame
 			sb.Begin();
 			BackgroundWall.Draw(sb);
 
-			/*if (Program.Hosting)
+			if (Program.Hosting)
 			{
-				World.Draw(sb);
-			}*/
+				PlatformWorld.Draw(sb);
+			}
 
 			LocalClient.Draw(sb);
 			DrawVignette();

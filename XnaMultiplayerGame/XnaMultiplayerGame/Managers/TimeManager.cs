@@ -18,13 +18,23 @@ namespace XnaMultiplayerGame.Managers
 	/// </summary>
 	public static class TimeManager
 	{
-		public static float Elapsed { get; private set; }
+		private static float _elapsed;
+		public static float Elapsed
+		{
+			get { return _elapsed * _timeMultiplier; }
+			private set { _elapsed = value; }
+		}
 
 		private static float _timeMultiplier = 1f;
 		public static float TimeMultiplier
 		{
 			get { return _timeMultiplier; }
 			set { _timeMultiplier = value; }
+		}
+
+		public static float ActualElapsed
+		{
+			get { return _elapsed; }
 		}
 
 		public static void Update(GameTime gt)

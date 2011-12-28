@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Runtime.Remoting.Messaging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using XnaMultiplayerGame.Helpers;
 using XnaMultiplayerGame.Managers;
 
 namespace XnaMultiplayerGame.Classes
@@ -26,7 +27,7 @@ namespace XnaMultiplayerGame.Classes
 
 		public static Texture2D Texture;
 
-		public static Vector2 Size
+		public static Vector2 TextureSize
 		{
 			get { return new Vector2(Texture.Width, Texture.Height); }
 		}
@@ -56,12 +57,9 @@ namespace XnaMultiplayerGame.Classes
 			RemoteClient = remoteClient;
 		}
 
-		public void Update(Platform[] platforms)
+		public void UpdatePhysics(Platform[] platforms)
 		{
 			float elapsed = TimeManager.Elapsed;
-
-			if(InputManager.InputManager.LMBJustPressed())
-				Noclipping = !Noclipping;
 
 			if (!Noclipping)
 			{
@@ -81,8 +79,13 @@ namespace XnaMultiplayerGame.Classes
 				{
 					Velocity = new Vector2(Velocity.X, 0);
 					Position = new Vector2(Position.X, p.Position.Y - Texture.Height);
+
+					break;
 				}
 			}
+
+			Position = Vector2.Clamp(Position, new Vector2(0, 0),
+			                         Helper.GetWindowSize() - new Vector2(BoundingBox.Width, BoundingBox.Height));
 		}
 
 		public void Draw(SpriteBatch sb)

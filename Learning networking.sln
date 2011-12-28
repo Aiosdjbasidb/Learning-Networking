@@ -7,28 +7,78 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleSidescroll", "Consol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XnaMultiplayerGame", "XnaMultiplayerGame\XnaMultiplayerGame\XnaMultiplayerGame.csproj", "{760A1A4A-BF73-4052-960E-FC066C909642}"
 EndProject
-Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "XnaMultiplayerGameContent", "XnaMultiplayerGame\XnaMultiplayerGameContent\XnaMultiplayerGameContent.contentproj", "{A3854134-6826-411E-B0B1-408549A246B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XnaMultiplayerGameContent", "XnaMultiplayerGame\XnaMultiplayerGameContent\XnaMultiplayerGameContent.contentproj", "{A3854134-6826-411E-B0B1-408549A246B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LidgrenChat", "LidgrenChat\LidgrenChat.csproj", "{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lidgren.Network", "D:\Coding Libraries\CSharp\lidgren-network-gen3\Lidgren.Network\Lidgren.Network.csproj", "{AE483C29-042E-4226-BA52-D247CE7676DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Debug|x86.ActiveCfg = Debug|x86
 		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Debug|x86.Build.0 = Debug|x86
+		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Release|Any CPU.ActiveCfg = Release|x86
+		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Release|Mixed Platforms.Build.0 = Release|x86
 		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Release|x86.ActiveCfg = Release|x86
 		{CEFB44F7-E36B-4702-AFE7-95312DCE8CE8}.Release|x86.Build.0 = Release|x86
+		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Debug|x86.ActiveCfg = Debug|x86
 		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Debug|x86.Build.0 = Debug|x86
+		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Release|Any CPU.ActiveCfg = Release|x86
+		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Release|Mixed Platforms.Build.0 = Release|x86
 		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Release|x86.ActiveCfg = Release|x86
 		{86FD9431-95FA-4B27-8A49-29D6F3C23098}.Release|x86.Build.0 = Release|x86
+		{760A1A4A-BF73-4052-960E-FC066C909642}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{760A1A4A-BF73-4052-960E-FC066C909642}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{760A1A4A-BF73-4052-960E-FC066C909642}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{760A1A4A-BF73-4052-960E-FC066C909642}.Debug|x86.ActiveCfg = Debug|x86
 		{760A1A4A-BF73-4052-960E-FC066C909642}.Debug|x86.Build.0 = Debug|x86
+		{760A1A4A-BF73-4052-960E-FC066C909642}.Release|Any CPU.ActiveCfg = Release|x86
+		{760A1A4A-BF73-4052-960E-FC066C909642}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{760A1A4A-BF73-4052-960E-FC066C909642}.Release|Mixed Platforms.Build.0 = Release|x86
 		{760A1A4A-BF73-4052-960E-FC066C909642}.Release|x86.ActiveCfg = Release|x86
 		{760A1A4A-BF73-4052-960E-FC066C909642}.Release|x86.Build.0 = Release|x86
+		{A3854134-6826-411E-B0B1-408549A246B3}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{A3854134-6826-411E-B0B1-408549A246B3}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{A3854134-6826-411E-B0B1-408549A246B3}.Debug|x86.ActiveCfg = Debug|x86
+		{A3854134-6826-411E-B0B1-408549A246B3}.Release|Any CPU.ActiveCfg = Release|x86
+		{A3854134-6826-411E-B0B1-408549A246B3}.Release|Mixed Platforms.ActiveCfg = Release|x86
 		{A3854134-6826-411E-B0B1-408549A246B3}.Release|x86.ActiveCfg = Release|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Debug|x86.ActiveCfg = Debug|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Debug|x86.Build.0 = Debug|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Release|Any CPU.ActiveCfg = Release|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Release|Mixed Platforms.Build.0 = Release|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Release|x86.ActiveCfg = Release|x86
+		{CB3E66BF-AB79-4D82-BAD0-B0DA8573DA01}.Release|x86.Build.0 = Release|x86
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{AE483C29-042E-4226-BA52-D247CE7676DA}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
