@@ -23,13 +23,19 @@ namespace XnaMultiplayerGame.Classes
 	/// </summary>
 	public class Player
 	{
-		public static TcpClient RemoteClient { get; set; }
-
 		public static Texture2D Texture;
 
 		public static Vector2 TextureSize
 		{
 			get { return new Vector2(Texture.Width, Texture.Height); }
+		}
+
+		/// <summary>
+		/// Use when you haven't gotten a size from the server. Make sure this is the same size as the textures size (not TextureSize), as the texture can be modified by the user.
+		/// </summary>
+		public static Vector2 PlayerSize
+		{
+			get { return new Vector2(32, 64); }
 		}
 
 		public static Vector2 Gravity
@@ -38,7 +44,6 @@ namespace XnaMultiplayerGame.Classes
 		}
 
 		public Color DrawColor { get; set; }
-
 		public static bool Noclipping { get; set; }
 
 		public Vector2 Position
@@ -48,13 +53,13 @@ namespace XnaMultiplayerGame.Classes
 		}
 
 		public Vector2 Velocity { get; set; }
+
 		public Rectangle BoundingBox { get; set; }
 
-		public Player(Vector2 position, Vector2 size, Color drawColor, TcpClient remoteClient)
+		public Player(Vector2 position, Vector2 size, Color drawColor)
 		{
 			BoundingBox = new Rectangle((int) position.X, (int) position.Y, (int) size.X, (int) size.Y);
 			DrawColor = drawColor;
-			RemoteClient = remoteClient;
 		}
 
 		public void UpdatePhysics(Platform[] platforms)
@@ -77,12 +82,17 @@ namespace XnaMultiplayerGame.Classes
 			{
 				if (BoundingBox.Intersects(p.BoundingBox))
 				{
-					Velocity = new Vector2(Velocity.X, 0);
+					Velocity = new Vector2(Velocity.X, PlatformWorld.MoveSpeed);
 					Position = new Vector2(Position.X, p.Position.Y - Texture.Height);
 
 					break;
 				}
 			}
+
+			if (Position.X > Helper.GetWindowSize().X || Position.X < 0)
+				Velocity = new Vector2(0, Velocity.Y);
+			if(Position.Y > Helper.GetWindowSize().Y || Position.Y < 0)
+				Velocity = new Vector2(Velocity.X, 0);
 
 			Position = Vector2.Clamp(Position, new Vector2(0, 0),
 			                         Helper.GetWindowSize() - new Vector2(BoundingBox.Width, BoundingBox.Height));

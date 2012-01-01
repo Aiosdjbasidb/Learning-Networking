@@ -19,10 +19,11 @@ namespace XnaMultiplayerGame.Managers
 	public static class TimeManager
 	{
 		private static float _elapsed;
+		private static float _totalElapsed;
+
 		public static float Elapsed
 		{
 			get { return _elapsed * _timeMultiplier; }
-			private set { _elapsed = value; }
 		}
 
 		private static float _timeMultiplier = 1f;
@@ -37,9 +38,20 @@ namespace XnaMultiplayerGame.Managers
 			get { return _elapsed; }
 		}
 
+		public static float TotalElapsed
+		{
+			get { return _totalElapsed*TimeMultiplier; }
+		}
+
+		public static float TotalActualElapsed
+		{
+			get { return _totalElapsed; }
+		}
+
 		public static void Update(GameTime gt)
 		{
-			Elapsed = (float) gt.ElapsedGameTime.TotalSeconds*_timeMultiplier;
+			_elapsed = (float) gt.ElapsedGameTime.TotalSeconds;
+			_totalElapsed += _elapsed;
 		}
 	}
 }

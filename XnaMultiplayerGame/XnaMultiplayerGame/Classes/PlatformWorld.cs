@@ -21,7 +21,7 @@ namespace XnaMultiplayerGame.Classes
 	/// </summary>
 	public static class PlatformWorld
 	{
-		public static List<Platform> Platforms { get; private set; }
+		public static List<Platform> Platforms { get; set; }
 		public static float MoveSpeed { get; set; }
 
 		private static float _elapsed;
@@ -41,7 +41,6 @@ namespace XnaMultiplayerGame.Classes
 
 		public static void SpawnPlatform(Vector2 position)
 		{
-			Console.WriteLine("Spawning platform");
 			Platforms.Add(new Platform(new Rectangle((int)position.X, (int)position.Y, Platform.Texture.Width, Platform.Texture.Height)));
 		}
 
@@ -51,11 +50,14 @@ namespace XnaMultiplayerGame.Classes
 
 			if (Platforms == null) return;
 
-			_elapsed += elapsed;
-			if (_elapsed >= _maxElapsed)
+			if (Program.Hosting) // Only spawn platforms if we're the server, else we might spawn platforms only to have them removed when receiving platforms from server.
 			{
-				_elapsed = 0f;
-				SpawnPlatform();
+				_elapsed += elapsed;
+				if (_elapsed >= _maxElapsed)
+				{
+					_elapsed = 0f;
+					SpawnPlatform();
+				}
 			}
 
 			// Update positions and remove from list if they're outside the top of the viewable area.

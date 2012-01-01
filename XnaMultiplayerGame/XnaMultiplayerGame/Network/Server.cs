@@ -4,10 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Net.Sockets;
+using Lidgren.Network;
 using Microsoft.Xna.Framework;
 using XnaMultiplayerGame.Classes;
-using XnaMultiplayerGame.Helpers;
 using XnaMultiplayerGame.Managers;
 
 namespace XnaMultiplayerGame.Network
@@ -22,123 +21,187 @@ namespace XnaMultiplayerGame.Network
 	/// </summary>
 	public static class Server
 	{
-		public static Client[] ConnectedClients { get; private set; }
+		public static NetServer NetServer { get; private set; }
+		public static List<Client> Clients { get; private set; }
 
-		private const float NetworkSendUpdateDelay = .1f; // Wait 10 ms before sending updates again.
-		private static float _networkDelayTime;
-
-		public enum RequestType
-		{
-			Join,
-			Disconnect,
-			GetPlatforms,
-			GetPlayers
-		}
+		private static float _sendInterval = .1f;
+		private static float _elapsed = 0f;
 
 		public static void Initialize()
 		{
-			ConnectedClients = new Client[100];
+			NetServer = new NetServer(new NetPeerConfiguration("XnaMultiplayerGame")
+			                          	{
+			                          		Port = 5555
+			                          	});
+
+			NetServer.RegisterReceivedCallback(MessageReceived);
+
+			NetServer.Start();
+
+			Clients = new List<Client>();
+		}
+
+		public static void Stop()
+		{
+			NetServer.Shutdown("Server shutting down");
 		}
 
 		public static void Update()
 		{
-			AcceptPendingConnections();
+			if (NetServer.Status == NetPeerStatus.NotRunning) return;
 
-			foreach (Client c in ConnectedClients)
+			float elapsed = TimeManager.ActualElapsed;
+
+			UpdateClients();
+
+			_elapsed += elapsed;
+			if (_elapsed >= _sendInterval)
 			{
-				if (c == null) continue;
+				_elapsed = 0f;
+				SendUpdatesToClients();
+			}
+		}
 
+		private static void UpdateClients()
+		{
+			foreach (var c in Clients)
+			{
 				c.Update();
 			}
+		}
 
-			_networkDelayTime += TimeManager.ActualElapsed;
-
-			if (_networkDelayTime >= NetworkSendUpdateDelay)
+		public static void SendUpdatesToClients()
+		{
+			foreach (var c in Clients)
 			{
-				Console.WriteLine("Sending updates to clients");
-				_networkDelayTime = 0f;
-				SendServerData();
+				c.SendUpdates();
 			}
 		}
 
-		private static void SendServerData()
+		private static void MessageReceived(object peer)
 		{
-			foreach (Client client in ConnectedClients)
+			NetIncomingMessage msg;
+			while ((msg = NetServer.ReadMessage()) != null)
 			{
-				if (client == null) continue;
-
-				client.SendUpdateData();
-
-				/*while (client.TcpClient.Available > 0)
+				switch (msg.MessageType)
 				{
-					string fullMessage = NetHelper.ReceiveStringMessageFrom(client.TcpClient);
-					string[] messages = fullMessage.Split(NetHelper.SplitChar);
-
-					int type;
-					if (Int32.TryParse(messages[0], out type))
-					{
-						switch (type)
+					case NetIncomingMessageType.Data:
 						{
-							case (int)RequestType.GetPlatforms:
-								{
-									string platformBuffer = "";
+							var type = new ServerMessageType(msg.ReadInt32());
 
-									foreach (Platform p in PlatformWorld.Platforms)
+							switch (type.Type)
+							{
+								case Headers.Server.SetPosition:
 									{
-										platformBuffer += p.Position.X + ":" + p.Position.Y + ":" + p.BoundingBox.Width + ":" + p.BoundingBox.Height + ";";
+										float x = msg.ReadFloat();
+										float y = msg.ReadFloat();
+
+										var client = Client.FromConnection(msg.SenderConnection, Clients);
+
+										client.Player.Position = new Vector2(x, y);
+
+										break;
 									}
+								case Headers.Server.SetVelocity:
+									{
+										float x = msg.ReadFloat();
+										float y = msg.ReadFloat();
 
-									NetHelper.SendMessageTo(client.TcpClient,
-																NetHelper.BuildMessage((int)LocalClient.DataType.Platforms) + platformBuffer);
+										var client = Client.FromConnection(msg.SenderConnection, Clients);
 
-									break;
-								}
+										client.Player.Velocity = new Vector2(x, y);
+
+										break;
+									}
+								case Headers.Server.GetPlayers: // Player information is ordered like the following: x, y, velX, velY, r, g, b, a
+									{
+										int id = msg.ReadInt32();
+
+										NetOutgoingMessage message = NetServer.CreateMessage();
+
+										message.Write((int)Headers.Client.ServerPlayers);
+
+										foreach (Client c in Clients)
+										{
+											message.Write(c.Player.Position.X);
+											message.Write(c.Player.Position.Y);
+											message.Write(c.Player.Velocity.X);
+											message.Write(c.Player.Velocity.Y);
+											message.Write(c.Player.DrawColor.R);
+											message.Write(c.Player.DrawColor.G);
+											message.Write(c.Player.DrawColor.B);
+											message.Write(c.Player.DrawColor.A);
+										}
+
+										Clients[id].Connection.SendMessage(message, NetDeliveryMethod.ReliableOrdered, 1);
+
+										break;
+									}
+								case Headers.Server.GetPlatforms:
+									{
+										int id = msg.ReadInt32();
+
+										NetOutgoingMessage message = NetServer.CreateMessage();
+
+										message.Write((int) Headers.Client.ServerPlatforms);
+
+										foreach (Platform p in PlatformWorld.Platforms)
+										{
+											message.Write(p.BoundingBox.X);
+											message.Write(p.BoundingBox.Y);
+											message.Write(p.BoundingBox.Width);
+											message.Write(p.BoundingBox.Height);
+										}
+
+										Clients[id].Connection.SendMessage(message, NetDeliveryMethod.ReliableOrdered, 2);
+
+										break;
+									}
+							}
+
+							break;
 						}
-					}
-				}*/
-			}
-		}
-
-		private static void AcceptPendingConnections()
-		{
-			var pending = Listener.PendingConnections.ToArray();
-
-			foreach (var connection in pending)
-			{
-				if (connection.Available > 0)
-				{
-					string[] messages = NetHelper.ReceiveMessageFrom(connection);
-					int type;
-					if (Int32.TryParse(messages[0], out type))
-					{
-						switch (type)
+					case NetIncomingMessageType.StatusChanged:
 						{
-							case (int) RequestType.Join:
-								{
-									int id = GetFreeSlotId();
+							var status = (NetConnectionStatus)msg.ReadByte();
 
-									ConnectedClients[id] = new Client(connection,
-									                                  new Player(Vector2.Zero, Player.TextureSize, Helper.GetRandomColor(), connection));
-									int x = (int)ConnectedClients[id].Player.Position.X;
-									int y = (int)ConnectedClients[id].Player.Position.Y;
-									Color c = ConnectedClients[id].Player.DrawColor;
+							switch (status)
+							{
+								case NetConnectionStatus.Connected:
+									{
+										string name = msg.SenderConnection.RemoteHailMessage.ReadString();
+										int id = FindAvailableId();
 
-									NetHelper.SendMessageTo(connection,
-									                        NetHelper.BuildMessage((float) LocalClient.DataType.NewPlayerInfo, id, x, y, (int)Player.TextureSize.X,
-									                                               (int)Player.TextureSize.Y, c.R, c.G, c.B));
+										Console.WriteLine("(" + msg.SenderConnection.RemoteEndpoint + ") " + name + " connected.");
+										Console.WriteLine("Giving id: " + id + ".");
 
-									Listener.PendingConnections.Remove(connection);
-									break;
-								}
+										Clients.Add(new Client(msg.SenderConnection, name, id));
+
+										break;
+									}
+								case NetConnectionStatus.Disconnected:
+									{
+										var client = Client.FromConnection(msg.SenderConnection, Clients);
+
+										//if (client == null) break; // If the client isn't in the list of connected clients, ignore it.
+
+										Clients.Remove(client);
+
+										Console.WriteLine("(" + client.Connection.RemoteEndpoint + ") " + client.Name + " disconnected.");
+
+										break;
+									}
+							}
+
+							break;
 						}
-					}
 				}
 			}
 		}
 
-		private static int GetFreeSlotId()
+		private static int FindAvailableId()
 		{
-			return ConnectedClients.Count(c => c != null);
+			return Clients.Count();
 		}
 	}
 }

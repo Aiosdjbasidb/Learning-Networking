@@ -4,7 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Net.Sockets;
+using System.Threading;
+using Lidgren.Network;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -25,118 +26,175 @@ namespace XnaMultiplayerGame.Network
 	{
 		private const int MoveSpeed = 300;
 
-		public static TcpClient TcpClient { get; private set; }
+		public static NetClient NetClient { get; private set; }
 		public static Player Player { get; set; }
-		public static int Id;
+		public static int Id { get; set; }
+		public static string Name { get; set; }
 
-		private static List<Platform> _platforms;
+		private static List<Player> _serverPlayers;
 
-		public enum DataType
-		{
-			/// <summary>
-			/// Format: id:x:y:w:h
-			/// </summary>
-			NewPlayerInfo,
-
-			/// <summary>
-			/// Format: plrX:plrY:plrW:plrH:velX:velY
-			/// </summary>
-			UpdateInfo
-		}
+		private static float _sendInterval = .1f;
+		private static float _elapsed = 0f;
 
 		public static void Initialize()
 		{
-			TcpClient = new TcpClient();
-			_platforms = new List<Platform>();
+			NetClient =
+				new NetClient(new NetPeerConfiguration("XnaMultiplayerGame")
+				              	{
+				              		AcceptIncomingConnections = false
+				              	});
 
 			if (Program.Hosting)
 			{
 				ConnectLocalHost();
 			}
+			else
+			{
+				Connect(Program.Ip);
+			}
+
+			_serverPlayers = new List<Player>();
 		}
 
 		public static void ConnectLocalHost()
 		{
-			TcpClient.Connect("127.0.0.1", 5555);
-			NetHelper.SendMessageTo(TcpClient, NetHelper.BuildMessage((int) Server.RequestType.Join));
+			Connect("127.0.0.1");
+		}
+
+		public static void Connect(string ip)
+		{
+			NetClient.Start();
+
+			var hailMessage = NetClient.CreateMessage();
+			hailMessage.Write(Name);
+
+			NetClient.Connect(ip, 5555, hailMessage);
+
+			Console.WriteLine(NetClient.ConnectionStatus);
+		}
+
+		public static void Disconnect()
+		{
+			NetClient.Disconnect("Client disconnecting.");
+
+			Console.WriteLine(NetClient.ConnectionStatus);
 		}
 
 		public static void Update()
 		{
 			float elapsed = TimeManager.Elapsed;
 
-			while (TcpClient.Available > 0)
+			_elapsed += TimeManager.ActualElapsed;
+
+			if (_elapsed >= _sendInterval)
 			{
-				// Update network
-				string fullMessage = NetHelper.ReceiveStringMessageFrom(TcpClient);
-				string[] messages = fullMessage.Split(NetHelper.SplitChar);
-				int type;
-				if (int.TryParse(messages[0], out type))
+				_elapsed = 0f;
+
+				GetServerPlayers();
+				GetServerPlatforms();
+			}
+
+			// Receive network data.
+			NetIncomingMessage msg;
+			while ((msg = NetClient.ReadMessage()) != null)
+			{
+				switch (msg.MessageType)
 				{
-					try
-					{
-						switch (type)
+					case NetIncomingMessageType.Data:
 						{
-							case (int)DataType.NewPlayerInfo:
-								{
-									// Receive order is: id;x;y;w;h;r;g;b
-									int id = int.Parse(messages[1]);
-									int x = int.Parse(messages[2]);
-									int y = int.Parse(messages[3]);
-									int width = int.Parse(messages[4]);
-									int height = int.Parse(messages[5]);
-									Color color = new Color(byte.Parse(messages[6]), byte.Parse(messages[7]), byte.Parse(messages[8]), 255);
-									Player = new Player(new Vector2(x, y), new Vector2(width, height), color, TcpClient);
+							var type = new ClientMessageType(msg.ReadInt32());
 
-									break;
-								}
-							case (int)DataType.UpdateInfo:
-								{
-									// Receive for player order is: plrX:plrY:plrW:plrH:velX:velY;
-									// Receive for platform order is: x:y;
-									string plrInfoString = fullMessage.Split(';')[1];
-									string mapInfoString = fullMessage.Split(';')[2];
-									string[] plrInfo = plrInfoString.Split(':');
-									string[] mapInfo = mapInfoString.Split(':');
-
-									float plrX = float.Parse(plrInfo[0]);
-									float plrY = float.Parse(plrInfo[1]);
-									float plrWidth = float.Parse(plrInfo[2]);
-									float plrHeight = float.Parse(plrInfo[3]);
-									float velX = float.Parse(plrInfo[4]);
-									float velY = float.Parse(plrInfo[5]);
-
-									Player.Position = new Vector2(plrX, plrY);
-									Player.BoundingBox = new Rectangle(Player.BoundingBox.X, Player.BoundingBox.Y, (int) plrWidth, (int) plrHeight);
-									Player.Velocity = new Vector2(velX, velY);
-
-									if (!Program.Hosting)
+							switch (type.Type)
+							{
+								case Headers.Client.NewPlayerInfo:
 									{
-										for (int i = 0; i < mapInfo.Length; i++)
-										{
-											if (mapInfo.Length < 2) break;
-											if (mapInfo[i] == string.Empty) continue;
+										int id = msg.ReadInt32();
+										float x = msg.ReadFloat();
+										float y = msg.ReadFloat();
+										int w = msg.ReadInt32();
+										int h = msg.ReadInt32();
+										Color drawColor = new Color(msg.ReadByte(), msg.ReadByte(), msg.ReadByte(), msg.ReadByte());
 
-											float x = float.Parse(mapInfo[i]);
-											float y = float.Parse(mapInfo[++i]);
+										Id = id;
+										Player = new Player(new Vector2(x, y), new Vector2(w, h), drawColor);
 
-											PlatformWorld.SpawnPlatform(new Vector2(x, y));
-										}
+										break;
 									}
+								case Headers.Client.PlayerInfo:
+									{
+										float x = msg.ReadFloat();
+										float y = msg.ReadFloat();
+										float velX = msg.ReadFloat();
+										float velY = msg.ReadFloat();
 
-									break;
-								}
+										Player.Position = new Vector2(x, y);
+										Player.Velocity = new Vector2(velX, velY);
+
+										break;
+									}
+								case Headers.Client.ServerPlayers:
+									{
+										var plrs = new List<Player>();
+
+										while (msg.Position != msg.LengthBits)
+										{
+											float x = msg.ReadFloat();
+											float y = msg.ReadFloat();
+											float velX = msg.ReadFloat();
+											float velY = msg.ReadFloat();
+											Color drawColor = new Color(msg.ReadByte(), msg.ReadByte(), msg.ReadByte(), msg.ReadByte());
+
+											plrs.Add(new Player(new Vector2(x, y), Player.PlayerSize, drawColor));
+										}
+
+										_serverPlayers = plrs;
+
+										break;
+									}
+								case Headers.Client.ServerPlatforms:
+									{
+										var platforms = new List<Platform>();
+
+										while (msg.Position != msg.LengthBits)
+										{
+											int x = msg.ReadInt32();
+											int y = msg.ReadInt32();
+											int width = msg.ReadInt32();
+											int height = msg.ReadInt32();
+
+											platforms.Add(new Platform(new Rectangle(x, y, width, height)));
+										}
+
+										PlatformWorld.Platforms = platforms;
+
+										break;
+									}
+							}
+
+							break;
 						}
-					}
-					catch (Exception e)
-					{
-						Console.WriteLine(e.Message);
+					case NetIncomingMessageType.StatusChanged:
+						{
+							var status = (NetConnectionStatus) msg.ReadByte();
 
-						if(!Program.Debugging)
-							Program.Game.Exit();
-						else
-							throw;
-					}
+							if (Program.Debugging)
+								Console.WriteLine("Status changed to: " + status);
+
+							if (status == NetConnectionStatus.Disconnected)
+							{
+								Console.WriteLine("Server shutdown");
+								Environment.Exit(0);
+							}
+
+							break;
+						}
+					default:
+						{
+							if (Program.Debugging)
+								Console.WriteLine("Unhandled " + msg.MessageType + ". Contained string: \"" + msg.ReadString() + "\".");
+
+							break;
+						}
 				}
 			}
 
@@ -152,18 +210,36 @@ namespace XnaMultiplayerGame.Network
 				{
 					Player.Move(MoveSpeed*elapsed, 0);
 				}
-				if (InputManager.InputManager.KeyJustPressed(Keys.W))
+				if (InputManager.InputManager.KeyPressed(Keys.W))
+				{
+					Player.Velocity = new Vector2(Player.Velocity.X, Player.Velocity.Y - (4000 * elapsed));
+				}
+				if (InputManager.InputManager.KeyJustPressed(Keys.Space))
 				{
 					Player.Velocity = new Vector2(Player.Velocity.X, -600);
 				}
 
+				ServerSetPosition(Player.Position);
+				ServerSetVelocity(Player.Velocity);
+
 				Player.UpdatePhysics(PlatformWorld.Platforms.ToArray());
+			}
+
+			// Update other "local" players.
+			foreach (Player p in _serverPlayers)
+			{
+				if(p.DrawColor != Player.DrawColor)
+					p.UpdatePhysics(PlatformWorld.Platforms.ToArray());
 			}
 		}
 
 		public static void Draw(SpriteBatch sb)
 		{
-			DrawWorld(sb);
+			foreach (Player p in _serverPlayers)
+			{
+				if (p.DrawColor != Player.DrawColor)
+					p.Draw(sb);
+			}
 
 			if (Player != null)
 			{
@@ -171,12 +247,46 @@ namespace XnaMultiplayerGame.Network
 			}
 		}
 
-		private static void DrawWorld(SpriteBatch sb)
+		private static void ServerSetPosition(Vector2 position)
 		{
-			foreach (Platform p in _platforms)
-			{
-				p.Draw(sb);
-			}
+			var msg = NetClient.CreateMessage();
+
+			msg.Write((int)Headers.Server.SetPosition);
+			msg.Write(Player.Position.X);
+			msg.Write(Player.Position.Y);
+
+			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
+		}
+
+		private static void ServerSetVelocity(Vector2 velocity)
+		{
+			var msg = NetClient.CreateMessage();
+
+			msg.Write((int) Headers.Server.SetVelocity);
+			msg.Write(Player.Velocity.X);
+			msg.Write(Player.Velocity.Y);
+
+			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+		}
+
+		private static void GetServerPlayers()
+		{
+			var msg = NetClient.CreateMessage();
+
+			msg.Write((int) Headers.Server.GetPlayers);
+			msg.Write(Id);
+
+			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 1);
+		}
+
+		private static void GetServerPlatforms()
+		{
+			var msg = NetClient.CreateMessage();
+
+			msg.Write((int) Headers.Server.GetPlatforms);
+			msg.Write(Id);
+
+			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 2);
 		}
 	}
 }

@@ -40,7 +40,10 @@ namespace XnaMultiplayerGame
 
 			Exiting += delegate
 			           	{
-			           		Listener.StopListening();
+							if(Program.Hosting)
+			           			Server.Stop();
+
+			           		LocalClient.Disconnect();
 			           	};
 		}
 
@@ -52,8 +55,19 @@ namespace XnaMultiplayerGame
 		/// </summary>
 		protected override void Initialize()
 		{
-			// Initialize classes
+			IsMouseVisible = true;
+			TargetElapsedTime = new TimeSpan(0, 0, 0, 0, 1000/120);
+			InactiveSleepTime = TargetElapsedTime;
+
+			Window.Title = "XNA Multiplayer Game - ";
+			if (Program.Hosting)
+				Window.Title += "Listen server, hosting on port 5555.";
+			else
+				Window.Title += "Client, joined at " + Program.Ip + ":5555.";
+
+			// Initialize classes & members.
 			sb = new SpriteBatch(GraphicsDevice);
+			Helper.Initialize(this);
 			ResourceHelper.Initialize(Content);
 
 			// Load content.
@@ -77,11 +91,10 @@ namespace XnaMultiplayerGame
 
 			if (Program.Hosting)
 			{
-				PlatformWorld.Initialize(DefaultScrollSpeed);
 				Server.Initialize();
-				Listener.Initialize();
 			}
 
+			PlatformWorld.Initialize(DefaultScrollSpeed);
 			LocalClient.Initialize();
 
 			base.Initialize();
@@ -105,7 +118,11 @@ namespace XnaMultiplayerGame
 		{
 			// Allows the game to exit
 			if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
-				this.Exit();
+				Exit();
+			if (InputManager.InputManager.KeyJustPressed(Keys.Escape))
+			{
+				LocalClient.Disconnect();
+			}
 
 			// TODO: Add your update logic here
 			InputManager.InputManager.Update(Keyboard.GetState(), Mouse.GetState(), IsActive);
@@ -135,12 +152,7 @@ namespace XnaMultiplayerGame
 
 			sb.Begin();
 			BackgroundWall.Draw(sb);
-
-			if (Program.Hosting)
-			{
-				PlatformWorld.Draw(sb);
-			}
-
+			PlatformWorld.Draw(sb);
 			LocalClient.Draw(sb);
 			DrawVignette();
 			sb.End();
