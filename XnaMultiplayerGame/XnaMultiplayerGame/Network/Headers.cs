@@ -52,6 +52,11 @@ namespace XnaMultiplayerGame.Network
 			SetVelocity,
 
 			/// <summary>
+			/// x, y
+			/// </summary>
+			SetPosition,
+
+			/// <summary>
 			/// id (send data to the client with the given id)
 			/// </summary>
 			GetPlayers,

@@ -208,49 +208,51 @@ namespace XnaMultiplayerGame.Network
 				if (InputManager.InputManager.KeyJustPressed(Keys.A))
 				{
 					Player.SetMoveDirection(-1, Player.MoveDirection.Y);
-					ServerSetMoveDirection(Player.MoveDirection);
+					//ServerSetMoveDirection(Player.MoveDirection);
 				}
 				else if (InputManager.InputManager.KeyJustReleased(Keys.A))
 				{
 					if (!InputManager.InputManager.GetPressedKeys().Contains(Keys.D))
 					{
 						Player.SetMoveDirection(0, Player.MoveDirection.Y);
-						ServerSetMoveDirection(Player.MoveDirection);
+						//ServerSetMoveDirection(Player.MoveDirection);
 					}
 				}
 
 				if (InputManager.InputManager.KeyJustPressed(Keys.D))
 				{
 					Player.SetMoveDirection(1, Player.MoveDirection.Y);
-					ServerSetMoveDirection(Player.MoveDirection);
+					//ServerSetMoveDirection(Player.MoveDirection);
 				}
 				else if (InputManager.InputManager.KeyJustReleased(Keys.D))
 				{
 					if (!InputManager.InputManager.GetPressedKeys().Contains(Keys.A))
 					{
 						Player.SetMoveDirection(0, Player.MoveDirection.Y);
-						ServerSetMoveDirection(Player.MoveDirection);
+						//ServerSetMoveDirection(Player.MoveDirection);
 					}
 				}
 
 				if (InputManager.InputManager.KeyJustPressed(Keys.W))
 				{
 					Player.SetMoveDirection(Player.MoveDirection.X, -1);
-					ServerSetMoveDirection(Player.MoveDirection);
+					//ServerSetMoveDirection(Player.MoveDirection);
 				}
 				else if (InputManager.InputManager.KeyJustReleased(Keys.W))
 				{
 					Player.SetMoveDirection(Player.MoveDirection.X, 0);
-					ServerSetMoveDirection(Player.MoveDirection);
+					//ServerSetMoveDirection(Player.MoveDirection);
 				}
 
 				if (InputManager.InputManager.KeyJustPressed(Keys.Space))
 				{
 					Player.Velocity = new Vector2(Player.Velocity.X, -600);
-					ServerSetVelocity(Player.Velocity);
+					//ServerSetVelocity(Player.Velocity);
 				}
 
 				Player.UpdatePhysics(PlatformWorld.Platforms.ToArray());
+				ServerSetVelocity(Player.Velocity);
+				ServerSetPosition(Player.Position);
 			}
 
 			// Update other "local" players.
@@ -293,6 +295,17 @@ namespace XnaMultiplayerGame.Network
 			msg.Write((int) Headers.Server.SetVelocity);
 			msg.Write(Player.Velocity.X);
 			msg.Write(Player.Velocity.Y);
+
+			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+		}
+
+		private static void ServerSetPosition(Vector2 position)
+		{
+			var msg = NetClient.CreateMessage();
+
+			msg.Write((int)Headers.Server.SetPosition);
+			msg.Write(position.X);
+			msg.Write(position.Y);
 
 			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 		}

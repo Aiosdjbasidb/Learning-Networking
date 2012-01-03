@@ -95,6 +95,17 @@ namespace XnaMultiplayerGame.Network
 
 										break;
 									}
+								case Headers.Server.SetPosition:
+									{
+										float x = msg.ReadFloat();
+										float y = msg.ReadFloat();
+
+										var client = Client.FromConnection(msg.SenderConnection, Clients);
+
+										client.Player.Position = new Vector2(x, y);
+
+										break;
+									}
 								case Headers.Server.GetPlayers: // Player information is ordered like the following: x, y, velX, velY, r, g, b, a
 									{
 										int id = msg.ReadInt32();
