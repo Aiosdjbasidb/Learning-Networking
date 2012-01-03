@@ -24,8 +24,6 @@ namespace XnaMultiplayerGame.Network
 	/// </summary>
 	public static class LocalClient
 	{
-		private const int MoveSpeed = 300;
-
 		public static NetClient NetClient { get; private set; }
 		public static Player Player { get; set; }
 		public static int Id { get; set; }
@@ -33,7 +31,7 @@ namespace XnaMultiplayerGame.Network
 
 		private static List<Player> _serverPlayers;
 
-		private static float _sendInterval = .1f;
+		private static float _sendInterval = .1f; // Receive server platforms every 100 ms.
 		private static float _elapsed = 0f;
 
 		public static void Initialize()
@@ -41,7 +39,7 @@ namespace XnaMultiplayerGame.Network
 			NetClient =
 				new NetClient(new NetPeerConfiguration("XnaMultiplayerGame")
 				              	{
-				              		AcceptIncomingConnections = false
+				              		AcceptIncomingConnections = false,
 				              	});
 
 			if (Program.Hosting)
@@ -69,8 +67,6 @@ namespace XnaMultiplayerGame.Network
 			hailMessage.Write(Name);
 
 			NetClient.Connect(ip, 5555, hailMessage);
-
-			Console.WriteLine(NetClient.ConnectionStatus);
 		}
 
 		public static void Disconnect()
@@ -90,9 +86,10 @@ namespace XnaMultiplayerGame.Network
 			{
 				_elapsed = 0f;
 
-				GetServerPlayers();
 				GetServerPlatforms();
 			}
+
+			GetServerPlayers();
 
 			// Receive network data.
 			NetIncomingMessage msg;
@@ -143,8 +140,14 @@ namespace XnaMultiplayerGame.Network
 											float velX = msg.ReadFloat();
 											float velY = msg.ReadFloat();
 											Color drawColor = new Color(msg.ReadByte(), msg.ReadByte(), msg.ReadByte(), msg.ReadByte());
+											float moveDirX = msg.ReadFloat();
+											float moveDirY = msg.ReadFloat();
 
-											plrs.Add(new Player(new Vector2(x, y), Player.PlayerSize, drawColor));
+											plrs.Add(new Player(new Vector2(x, y), Player.PlayerSize, drawColor)
+											         	{
+											         		MoveDirection = new Vector2(moveDirX, moveDirY),
+															Velocity = new Vector2(velX, velY)
+											         	});
 										}
 
 										_serverPlayers = plrs;
@@ -202,25 +205,50 @@ namespace XnaMultiplayerGame.Network
 			if (Player != null)
 			{
 				// Update input
-				if (InputManager.InputManager.KeyPressed(Keys.A))
+				if (InputManager.InputManager.KeyJustPressed(Keys.A))
 				{
-					Player.Move(-MoveSpeed*elapsed, 0);
+					Player.SetMoveDirection(-1, Player.MoveDirection.Y);
+					ServerSetMoveDirection(Player.MoveDirection);
 				}
-				if (InputManager.InputManager.KeyPressed(Keys.D))
+				else if (InputManager.InputManager.KeyJustReleased(Keys.A))
 				{
-					Player.Move(MoveSpeed*elapsed, 0);
+					if (!InputManager.InputManager.GetPressedKeys().Contains(Keys.D))
+					{
+						Player.SetMoveDirection(0, Player.MoveDirection.Y);
+						ServerSetMoveDirection(Player.MoveDirection);
+					}
 				}
-				if (InputManager.InputManager.KeyPressed(Keys.W))
+
+				if (InputManager.InputManager.KeyJustPressed(Keys.D))
 				{
-					Player.Velocity = new Vector2(Player.Velocity.X, Player.Velocity.Y - (4000 * elapsed));
+					Player.SetMoveDirection(1, Player.MoveDirection.Y);
+					ServerSetMoveDirection(Player.MoveDirection);
 				}
+				else if (InputManager.InputManager.KeyJustReleased(Keys.D))
+				{
+					if (!InputManager.InputManager.GetPressedKeys().Contains(Keys.A))
+					{
+						Player.SetMoveDirection(0, Player.MoveDirection.Y);
+						ServerSetMoveDirection(Player.MoveDirection);
+					}
+				}
+
+				if (InputManager.InputManager.KeyJustPressed(Keys.W))
+				{
+					Player.SetMoveDirection(Player.MoveDirection.X, -1);
+					ServerSetMoveDirection(Player.MoveDirection);
+				}
+				else if (InputManager.InputManager.KeyJustReleased(Keys.W))
+				{
+					Player.SetMoveDirection(Player.MoveDirection.X, 0);
+					ServerSetMoveDirection(Player.MoveDirection);
+				}
+
 				if (InputManager.InputManager.KeyJustPressed(Keys.Space))
 				{
 					Player.Velocity = new Vector2(Player.Velocity.X, -600);
+					ServerSetVelocity(Player.Velocity);
 				}
-
-				ServerSetPosition(Player.Position);
-				ServerSetVelocity(Player.Velocity);
 
 				Player.UpdatePhysics(PlatformWorld.Platforms.ToArray());
 			}
@@ -228,7 +256,7 @@ namespace XnaMultiplayerGame.Network
 			// Update other "local" players.
 			foreach (Player p in _serverPlayers)
 			{
-				if(p.DrawColor != Player.DrawColor)
+				if(p.DrawColor != Player.DrawColor && p.MoveDirection != Player.MoveDirection)
 					p.UpdatePhysics(PlatformWorld.Platforms.ToArray());
 			}
 		}
@@ -247,15 +275,15 @@ namespace XnaMultiplayerGame.Network
 			}
 		}
 
-		private static void ServerSetPosition(Vector2 position)
+		private static void ServerSetMoveDirection(Vector2 moveDirection)
 		{
 			var msg = NetClient.CreateMessage();
 
-			msg.Write((int)Headers.Server.SetPosition);
-			msg.Write(Player.Position.X);
-			msg.Write(Player.Position.Y);
+			msg.Write((int)Headers.Server.SetMoveDirection);
+			msg.Write(moveDirection.X);
+			msg.Write(moveDirection.Y);
 
-			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
+			NetClient.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 		}
 
 		private static void ServerSetVelocity(Vector2 velocity)

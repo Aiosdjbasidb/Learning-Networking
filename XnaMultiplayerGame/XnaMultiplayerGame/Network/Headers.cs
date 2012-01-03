@@ -29,7 +29,7 @@ namespace XnaMultiplayerGame.Network
 			PlayerInfo,
 
 			/// <summary>
-			/// x, y, velX, velY, r, g, b, a
+			/// x, y, velX, velY, r, g, b, a, moveDirX, moveDirY
 			/// </summary>
 			ServerPlayers,
 
@@ -44,7 +44,7 @@ namespace XnaMultiplayerGame.Network
 			/// <summary>
 			/// x, y
 			/// </summary>
-			SetPosition,
+			SetMoveDirection,
 
 			/// <summary>
 			/// x, y

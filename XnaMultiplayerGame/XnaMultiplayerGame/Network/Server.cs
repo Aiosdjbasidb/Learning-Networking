@@ -24,9 +24,6 @@ namespace XnaMultiplayerGame.Network
 		public static NetServer NetServer { get; private set; }
 		public static List<Client> Clients { get; private set; }
 
-		private static float _sendInterval = .1f;
-		private static float _elapsed = 0f;
-
 		public static void Initialize()
 		{
 			NetServer = new NetServer(new NetPeerConfiguration("XnaMultiplayerGame")
@@ -53,13 +50,6 @@ namespace XnaMultiplayerGame.Network
 			float elapsed = TimeManager.ActualElapsed;
 
 			UpdateClients();
-
-			_elapsed += elapsed;
-			if (_elapsed >= _sendInterval)
-			{
-				_elapsed = 0f;
-				SendUpdatesToClients();
-			}
 		}
 
 		private static void UpdateClients()
@@ -67,14 +57,6 @@ namespace XnaMultiplayerGame.Network
 			foreach (var c in Clients)
 			{
 				c.Update();
-			}
-		}
-
-		public static void SendUpdatesToClients()
-		{
-			foreach (var c in Clients)
-			{
-				c.SendUpdates();
 			}
 		}
 
@@ -91,14 +73,14 @@ namespace XnaMultiplayerGame.Network
 
 							switch (type.Type)
 							{
-								case Headers.Server.SetPosition:
+								case Headers.Server.SetMoveDirection:
 									{
 										float x = msg.ReadFloat();
 										float y = msg.ReadFloat();
 
 										var client = Client.FromConnection(msg.SenderConnection, Clients);
 
-										client.Player.Position = new Vector2(x, y);
+										client.Player.MoveDirection = new Vector2(x, y);
 
 										break;
 									}
@@ -131,6 +113,8 @@ namespace XnaMultiplayerGame.Network
 											message.Write(c.Player.DrawColor.G);
 											message.Write(c.Player.DrawColor.B);
 											message.Write(c.Player.DrawColor.A);
+											message.Write(c.Player.MoveDirection.X);
+											message.Write(c.Player.MoveDirection.Y);
 										}
 
 										Clients[id].Connection.SendMessage(message, NetDeliveryMethod.ReliableOrdered, 1);
@@ -143,7 +127,7 @@ namespace XnaMultiplayerGame.Network
 
 										NetOutgoingMessage message = NetServer.CreateMessage();
 
-										message.Write((int) Headers.Client.ServerPlatforms);
+										message.Write((int)Headers.Client.ServerPlatforms);
 
 										foreach (Platform p in PlatformWorld.Platforms)
 										{
@@ -193,6 +177,11 @@ namespace XnaMultiplayerGame.Network
 									}
 							}
 
+							break;
+						}
+					default:
+						{
+							Console.WriteLine(msg.ReadString());
 							break;
 						}
 				}

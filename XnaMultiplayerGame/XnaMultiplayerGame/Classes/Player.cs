@@ -23,6 +23,9 @@ namespace XnaMultiplayerGame.Classes
 	/// </summary>
 	public class Player
 	{
+		private const int MoveSpeed = 300;
+		private const int BoostValue = 3000;
+
 		public static Texture2D Texture;
 
 		public static Vector2 TextureSize
@@ -44,7 +47,6 @@ namespace XnaMultiplayerGame.Classes
 		}
 
 		public Color DrawColor { get; set; }
-		public static bool Noclipping { get; set; }
 
 		public Vector2 Position
 		{
@@ -53,7 +55,7 @@ namespace XnaMultiplayerGame.Classes
 		}
 
 		public Vector2 Velocity { get; set; }
-
+		public Vector2 MoveDirection { get; set; }
 		public Rectangle BoundingBox { get; set; }
 
 		public Player(Vector2 position, Vector2 size, Color drawColor)
@@ -62,36 +64,48 @@ namespace XnaMultiplayerGame.Classes
 			DrawColor = drawColor;
 		}
 
-		public void UpdatePhysics(Platform[] platforms)
+		public void UpdatePhysics(IEnumerable<Platform> platforms)
 		{
 			float elapsed = TimeManager.Elapsed;
 
-			if (!Noclipping)
+			if (MoveDirection.Y <= -1)
 			{
-				Velocity += Gravity*elapsed;
-				Position += Velocity*elapsed;
+				Velocity = new Vector2(Velocity.X, Velocity.Y - (BoostValue * elapsed));
 			}
-			else
-			{
-				Position = InputManager.InputManager.MousePosition;
-				Velocity = Vector2.Zero;
-			}
+
+			var oldPosition = new Vector2(Position.X, Position.Y);
+
+			Velocity += Gravity * elapsed;
+			Position += MoveDirection * (MoveSpeed * elapsed);
+			Position += Velocity*elapsed;
 
 			// Update collisions
 			foreach (Platform p in platforms)
 			{
 				if (BoundingBox.Intersects(p.BoundingBox))
 				{
-					Velocity = new Vector2(Velocity.X, PlatformWorld.MoveSpeed);
-					Position = new Vector2(Position.X, p.Position.Y - Texture.Height);
+					Position = oldPosition;
+
+					if (Position.Y + BoundingBox.Height > p.Position.Y + Platform.Texture.Height)
+					{
+						if(Position.Y >= p.BoundingBox.Bottom)
+							Velocity = new Vector2(0, 0);
+						else
+							Velocity = new Vector2(0, PlatformWorld.MoveSpeed);
+					}
+					else
+					{
+						Velocity = new Vector2(Velocity.X, PlatformWorld.MoveSpeed);
+						Position = new Vector2(Position.X, p.Position.Y - Texture.Height);
+					}
 
 					break;
 				}
 			}
 
-			if (Position.X > Helper.GetWindowSize().X || Position.X < 0)
+			if (Position.X + PlayerSize.X > Helper.GetWindowSize().X || Position.X < 0)
 				Velocity = new Vector2(0, Velocity.Y);
-			if(Position.Y > Helper.GetWindowSize().Y || Position.Y < 0)
+			if(Position.Y + PlayerSize.Y > Helper.GetWindowSize().Y || Position.Y < 0)
 				Velocity = new Vector2(Velocity.X, 0);
 
 			Position = Vector2.Clamp(Position, new Vector2(0, 0),
@@ -103,9 +117,9 @@ namespace XnaMultiplayerGame.Classes
 			sb.Draw(Texture, BoundingBox, DrawColor);
 		}
 
-		public void Move(float x, float y)
+		public void SetMoveDirection(float x, float y)
 		{
-			Position = new Vector2(Position.X + x, Position.Y + y);
+			MoveDirection = new Vector2(x, y);
 		}
 	}
 }

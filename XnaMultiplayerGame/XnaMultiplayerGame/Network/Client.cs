@@ -26,6 +26,8 @@ namespace XnaMultiplayerGame.Network
 		public int Id { get; private set; }
 		public Player Player { get; private set; }
 
+		private Player _oldPlayer;
+
 		#region Static methods
 		public static Client FromConnection(NetConnection netConnection, List<Client> clients)
 		{
@@ -66,7 +68,7 @@ namespace XnaMultiplayerGame.Network
 			Connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 		}
 
-		public void SendUpdates()
+		public void SendPlayerPositionVelocity()
 		{
 			var msg = Server.NetServer.CreateMessage();
 
@@ -81,6 +83,7 @@ namespace XnaMultiplayerGame.Network
 
 		public void Update()
 		{
+			_oldPlayer = Player;
 			Player.UpdatePhysics(PlatformWorld.Platforms.ToArray());
 		}
 	}
