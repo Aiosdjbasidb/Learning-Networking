@@ -48,7 +48,7 @@ namespace XnaMultiplayerGame.Classes
 		{
 			float elapsed = TimeManager.Elapsed;
 
-			if (Platforms == null) return;
+			if (Platforms == null) return; // Don't proceed if we haven't gotten any platforms from the server yet. (implies we're the client, and is only possible to be null if we're the client)
 
 			if (Program.Hosting) // Only spawn platforms if we're the server, else we might spawn platforms only to have them removed when receiving platforms from server.
 			{
@@ -82,6 +82,10 @@ namespace XnaMultiplayerGame.Classes
 			}
 		}
 
+		/// <summary>
+		/// Do not confuse with player spawn position! This is the spawn position of a new platform.
+		/// </summary>
+		/// <returns></returns>
 		private static Vector2 GetSpawnPosition()
 		{
 			return new Vector2(Helper.Rand.Next(10, (int)Helper.GetWindowSize().X - (Platform.Texture.Width + 10)), Helper.GetWindowSize().Y);
