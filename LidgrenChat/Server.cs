@@ -70,6 +70,10 @@ namespace LidgrenChat
 							{
 								Broadcast("Server", "Client connected!", null);
 							}
+							else if (status == NetConnectionStatus.Disconnected)
+							{
+								Broadcast("Server", "Client disconnected!", null);
+							}
 
 							break;
 						}
@@ -104,6 +108,8 @@ namespace LidgrenChat
 				NetOutgoingMessage msg = NetServer.CreateMessage();
 				msg.Write(name);
 				msg.Write(message);
+
+				msg.Encrypt(new NetXtea("SuperSecretKey"));
 				NetServer.SendMessage(msg, connections, NetDeliveryMethod.ReliableOrdered, 0);
 
 				Console.WriteLine("Broadcasted message from " + name + ", containing the following message: " + message);

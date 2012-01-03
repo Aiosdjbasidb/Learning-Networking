@@ -45,6 +45,8 @@
 			// 
 			// writeBox
 			// 
+			this.writeBox.AcceptsReturn = true;
+			this.writeBox.AcceptsTab = true;
 			this.writeBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
 						| System.Windows.Forms.AnchorStyles.Right)));
 			this.writeBox.Enabled = false;
@@ -139,6 +141,7 @@
 						| System.Windows.Forms.AnchorStyles.Left)
 						| System.Windows.Forms.AnchorStyles.Right)));
 			this.mainChat.FormattingEnabled = true;
+			this.mainChat.HorizontalScrollbar = true;
 			this.mainChat.Location = new System.Drawing.Point(13, 28);
 			this.mainChat.Name = "mainChat";
 			this.mainChat.ScrollAlwaysVisible = true;

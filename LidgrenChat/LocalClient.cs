@@ -59,6 +59,8 @@ namespace LidgrenChat
 			NetIncomingMessage incoming;
 			while ((incoming = NetClient.ReadMessage()) != null)
 			{
+				incoming.Decrypt(new NetXtea("SuperSecretKey"));
+
 				switch (incoming.MessageType)
 				{
 					case NetIncomingMessageType.Data:
